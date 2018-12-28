@@ -1,10 +1,11 @@
 from os import listdir, makedirs
 from os.path import join, isdir, dirname, abspath, exists
+
+from PIL import Image
 from mutagen.easyid3 import EasyID3
 from mutagen.flac import FLAC
-import mutagen.id3
-from PIL import Image
 from mutagen.id3 import ID3, APIC
+from shutil import copyfile
 
 
 class List:
@@ -14,9 +15,10 @@ class List:
     albumList = []
     artistList = []
     path = ""
+    ctr = 0
 
     def setPath(self, path):
-        self.path = path
+        self.path = path.replace("\\", "/")
 
     def add(self, file, path):
         type = file[-4:].replace(".", "")
@@ -58,11 +60,11 @@ class List:
 
     def makeFolder(self):
         for artist in self.artistList:
-            path2 = self.path + "\\new\\" + artist
+            path2 = self.path + "/new/" + artist
             if not exists(path2):
                 makedirs(path2)
         for album in self.albumList:
-            path3 = self.path + "\\new\\" + album[0] + "\\" + album[1]
+            path3 = self.path + "/new/" + album[0] + "/" + album[1]
             if not exists(path3):
                 makedirs(path3)
 
@@ -71,9 +73,22 @@ class List:
             if c not in ['/', '\\', ':', '*', '?', '<', '>', '|']:
                 return c
             else:
-                return ""
+                return "_"
 
-        return "".join(safe_char(c) for c in filename).rstrip("_")
+        return "".join(safe_char(c) for c in filename).rstrip("")
+
+    def copySongs(self):
+        for song in self.masterList:
+            source = song.path.replace("\\", "/")
+            dest = self.path + "/" + "new" + "/" + self.legalize(song.albumArtist) + "/" + self.legalize(song.album) + "/" + song.fileName
+            destImg = self.path + "/" + "new" + "/" + self.legalize(song.albumArtist) + "/" + self.legalize(song.album) + "/" + "folder.jpg"
+            if not exists(dest):
+                copyfile(source, dest)
+            if not exists(destImg):
+                song.image.save(destImg)
+            self.ctr +=1
+            print(" %d of %d (%d percent)" %(self.ctr, self.masterList.__len__(), 100*self.ctr/self.masterList.__len__()))
+
 
 
 class SongFile:
@@ -82,10 +97,12 @@ class SongFile:
     album = "Tagging Error"
     track = "-1"
     path = "Tagging Error"
+    fileName = "Bad File"
     image = None
 
     def __init__(self, song, path, type):
-        self.path = path + "\\" + song
+        self.path = path + "/" + song
+        self.fileName = song
         if type == "flac":
             metaData = FLAC(self.path)
         elif type == "mp3":
@@ -116,11 +133,11 @@ class SongFile:
             self.track = metaData["tracknumber"][0].split('/')[0]
         except:
             print("***" + song + "Track number Error")
-        if(type == "flac"):
+        if type == "flac":
             with open('image.jpg', 'wb') as img:
                 img.write(metaData.pictures[0].data)
                 self.image = Image.open('image.jpg')
-        else:
+        elif type == "mp3":
             audio = ID3(self.path)
             with open('image.jpg', 'rb') as albumart:
                 audio['APIC'] = APIC(
@@ -148,12 +165,14 @@ def main():
     path = input("What is the path to work with? ('q' for the directory of the python file): ")
     if path == 'q':
         path = dirname(abspath(__file__))
-    # path = "D:\Music\Kanye West\Graduation"
+    # path = "D:\Music\Childish Gambino"
+    print("Searching " + path)
     l.setPath(l, path)
     l.makeMasterList(l, path)
     # l.printMasterList(l)
     l.makeAlbumList(l)
     l.makeFolder(l)
+    l.copySongs(l)
 
 
 if __name__ == '__main__':
