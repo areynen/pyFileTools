@@ -1,14 +1,21 @@
-from os import listdir
-from os.path import join, isdir, dirname, abspath
+from os import listdir, makedirs
+from os.path import join, isdir, dirname, abspath, exists
 from mutagen.mp3 import MP3
 from mutagen.easyid3 import EasyID3
 from mutagen.flac import FLAC
 import mutagen.id3
 
+
 class List:
     masterList = []
     song_count = 0
     not_count = 0
+    albumList = []
+    artistList = []
+    path = ""
+
+    def setPath(self, path):
+        self.path = path
 
     def add(self, file, path):
         type = file[-4:].replace(".", "")
@@ -35,6 +42,37 @@ class List:
             f.printSong()
         # print(self.song_count)
         # print(self.not_count)
+
+    def makeAlbumList(self):
+        for song in self.masterList:
+            tup = [self.legalize(song.albumArtist), self.legalize(song.album)]
+            if tup not in self.albumList:
+                self.albumList.append(tup)
+            if tup[0] not in self.artistList:
+                self.artistList.append(tup[0])
+        self.albumList.sort()
+        self.artistList.sort()
+        print(self.albumList)
+        print(self.artistList)
+
+    def makeFolder(self):
+        for artist in self.artistList:
+            path2 = self.path + "\\new\\" + artist
+            if not exists(path2):
+                makedirs(path2)
+        for album in self.albumList:
+            path3 = self.path + "\\new\\" + album[0] + "\\" + album[1]
+            if not exists(path3):
+                makedirs(path3)
+
+    def legalize(filename):
+        def safe_char(c):
+            if c not in ['/', '\\', ':', '*', '?', '<', '>', '|']:
+                return c
+            else:
+                return ""
+
+        return "".join(safe_char(c) for c in filename).rstrip("_")
 
 
 class SongFile:
@@ -94,24 +132,22 @@ class SongFile:
 
     def printSong(self):
         print("title : " + self.title
-                + "; albumArtist : " + self.albumArtist
-                + "; album : " + self.album
-                + "; track : " + self.track)
-
+              + "; albumArtist : " + self.albumArtist
+              + "; album : " + self.album
+              + "; track : " + self.track)
 
 
 def main():
     l = List
     path = input("What is the path to work with? ('q' for the directory of the python file): ")
+    l.setPath(l, path)
     if path == 'q':
         path = dirname(abspath(__file__))
     # path = "D:\Music\Childish Gambino"
     l.makeMasterList(l, path)
-    l.printMasterList(l)
-    # filesAndDirs = listdir()
-    # l.fillOutFiles(filesAndDirs)
-    # print(filesAndDirs)
-    # getFiles()
+    # l.printMasterList(l)
+    l.makeAlbumList(l)
+    l.makeFolder(l)
 
 
 if __name__ == '__main__':
