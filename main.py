@@ -1,9 +1,10 @@
 from os import listdir, makedirs
 from os.path import join, isdir, dirname, abspath, exists
-from mutagen.mp3 import MP3
 from mutagen.easyid3 import EasyID3
 from mutagen.flac import FLAC
 import mutagen.id3
+from PIL import Image
+from mutagen.id3 import ID3, APIC
 
 
 class List:
@@ -81,54 +82,59 @@ class SongFile:
     album = "Tagging Error"
     track = "-1"
     path = "Tagging Error"
+    image = None
 
     def __init__(self, song, path, type):
         self.path = path + "\\" + song
         if type == "flac":
             metaData = FLAC(self.path)
-            try:
-                self.title = metaData["title"][0]
-            except:
-                print("***" + song + "Title Error")
-            try:
-                self.albumArtist = metaData["albumartist"][0]
-            except:
-                print("***" + song + "AlbumArtist Error")
-                try:
-                    self.albumArtist = ''.join(metaData["artists"])
-                    print("***" + "But the artist works")
-                except:
-                    print("*** AND" + song + " Artist Error")
-            try:
-                self.album = metaData["album"][0]
-            except:
-                print("***" + song + "Album Error")
-            try:
-                self.track = metaData["tracknumber"][0].split('/')[0]
-            except:
-                print("***" + song + "Track number Error")
         elif type == "mp3":
-            metaData = MP3(self.path)
+            metaData = EasyID3(self.path)
+        try:
+            self.title = metaData["title"][0]
+        except:
+            print("***" + song + "Title Error")
+        try:
+            self.albumArtist = metaData["albumartist"][0]
+        except:
+            print("***" + song + "AlbumArtist Error")
             try:
-                self.title = ''.join(metaData["TIT2"])
+                self.albumArtist = ''.join(metaData["artist"])
+                print("***" + "But the artist works")
             except:
-                print("***" + song + "Title Error")
+                print("*** AND " + song + " Artist Error")
             try:
-                self.albumArtist = ''.join(metaData["TPE2"])
+                self.albumArtist = ''.join(metaData["artists"])
+                print("***" + "But the artist works")
             except:
-                print("***" + song + " AlbumArtist Error")
-                try:
-                    self.albumArtist = ''.join(metaData["TPE1"])
-                except:
-                    print("***" + song + " Artist Error")
-            try:
-                self.album = ''.join(metaData["TALB"])
-            except:
-                print("***" + song + "Album Error")
-            try:
-                self.track = ''.join(metaData["TRCK"]).split('/')[0]
-            except:
-                print("***" + song + "Track number Error")
+                print("*** AND " + song + " Artist Error")
+        try:
+            self.album = metaData["album"][0]
+        except:
+            print("***" + song + "Album Error")
+        try:
+            self.track = metaData["tracknumber"][0].split('/')[0]
+        except:
+            print("***" + song + "Track number Error")
+        if(type == "flac"):
+            with open('image.jpg', 'wb') as img:
+                img.write(metaData.pictures[0].data)
+                self.image = Image.open('image.jpg')
+        else:
+            audio = ID3(self.path)
+            with open('image.jpg', 'rb') as albumart:
+                audio['APIC'] = APIC(
+                    encoding=3,
+                    mime='image/jpeg',
+                    type=3, desc=u'Cover',
+                    data=albumart.read()
+                )
+                self.image = Image.open('image.jpg')
+
+
+
+
+
 
     def printSong(self):
         print("title : " + self.title
@@ -142,7 +148,7 @@ def main():
     path = input("What is the path to work with? ('q' for the directory of the python file): ")
     if path == 'q':
         path = dirname(abspath(__file__))
-    path = "D:\Music\Childish Gambino"
+    # path = "D:\Music\Kanye West\Graduation"
     l.setPath(l, path)
     l.makeMasterList(l, path)
     # l.printMasterList(l)
