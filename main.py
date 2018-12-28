@@ -140,10 +140,10 @@ class SongFile:
 def main():
     l = List
     path = input("What is the path to work with? ('q' for the directory of the python file): ")
-    l.setPath(l, path)
     if path == 'q':
         path = dirname(abspath(__file__))
-    # path = "D:\Music\Childish Gambino"
+    path = "D:\Music\Childish Gambino"
+    l.setPath(l, path)
     l.makeMasterList(l, path)
     # l.printMasterList(l)
     l.makeAlbumList(l)
