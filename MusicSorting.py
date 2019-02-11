@@ -23,13 +23,9 @@ class List:
     def add(self, file, path):
         type = file[-4:].replace(".", "")
         if type == "flac" or type == "mp3":
-            # print("is song")
-            # self.song_count+=1
             song = SongFile(file, path, type)
             self.masterList.append(song)
         else:
-            # print("not song")
-            # self.not_count+=1
             pass
 
     def makeMasterList(self, path):
@@ -43,8 +39,6 @@ class List:
     def printMasterList(self):
         for f in self.masterList:
             f.printSong()
-        # print(self.song_count)
-        # print(self.not_count)
 
     def makeAlbumList(self):
         for song in self.masterList:
@@ -81,11 +75,11 @@ class List:
         for song in self.masterList:
             source = song.path.replace("\\", "/")
             dest = self.path + "/" + "new" + "/" + self.legalize(song.albumArtist) + "/" + self.legalize(song.album) + "/" + song.fileName
-            destImg = self.path + "/" + "new" + "/" + self.legalize(song.albumArtist) + "/" + self.legalize(song.album) + "/" + "folder.jpg"
-            if not exists(dest):
-                copyfile(source, dest)
-            if not exists(destImg):
-                song.image.save(destImg)
+            # destImg = self.path + "/" + "new" + "/" + self.legalize(song.albumArtist) + "/" + self.legalize(song.album) + "/" + "folder.jpg"
+            # if not exists(dest):
+            #     copyfile(source, dest)
+            # if not exists(destImg):
+            #     song.image.save(destImg)
             self.ctr +=1
             print(" %d of %d (%d percent)" %(self.ctr, self.masterList.__len__(), 100*self.ctr/self.masterList.__len__()))
 
@@ -133,25 +127,20 @@ class SongFile:
             self.track = metaData["tracknumber"][0].split('/')[0]
         except:
             print("***" + song + "Track number Error")
-        if type == "flac":
-            with open('image.jpg', 'wb') as img:
-                img.write(metaData.pictures[0].data)
-                self.image = Image.open('image.jpg')
-        elif type == "mp3":
-            audio = ID3(self.path)
-            with open('image.jpg', 'rb') as albumart:
-                audio['APIC'] = APIC(
-                    encoding=3,
-                    mime='image/jpeg',
-                    type=3, desc=u'Cover',
-                    data=albumart.read()
-                )
-                self.image = Image.open('image.jpg')
-
-
-
-
-
+        # if type == "flac":
+        #     with open('image.jpg', 'wb') as img:
+        #         img.write(metaData.pictures[0].data)
+        #         self.image = Image.open('image.jpg')
+        # elif type == "mp3":
+        #     audio = ID3(self.path)
+        #     with open('image.jpg', 'rb') as albumart:
+        #         audio['APIC'] = APIC(
+        #             encoding=3,
+        #             mime='image/jpeg',
+        #             type=3, desc=u'Cover',
+        #             data=albumart.read()
+        #         )
+        #         self.image = Image.open('image.jpg')
 
     def printSong(self):
         print("title : " + self.title
@@ -165,7 +154,7 @@ def main():
     path = input("What is the path to work with? ('q' for the directory of the python file): ")
     if path == 'q':
         path = dirname(abspath(__file__))
-    # path = "D:\Music\Childish Gambino"
+    path = "D:\Music\Childish Gambino"
     print("Searching " + path)
     l.setPath(l, path)
     l.makeMasterList(l, path)
