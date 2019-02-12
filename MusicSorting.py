@@ -8,6 +8,7 @@ from mutagen.id3 import ID3, APIC
 from shutil import copyfile
 
 
+
 class List:
     masterList = []
     song_count = 0
@@ -49,8 +50,8 @@ class List:
                 self.artistList.append(tup[0])
         self.albumList.sort()
         self.artistList.sort()
-        print(self.albumList)
-        print(self.artistList)
+        # print(self.albumList)
+        # print(self.artistList)
 
     def makeFolder(self):
         for artist in self.artistList:
@@ -80,17 +81,26 @@ class List:
             #     copyfile(source, dest)
             # if not exists(destImg):
             #     song.image.save(destImg)
-            self.ctr +=1
+            self.ctr += 1
+            if song.artistChecking():
+                song.generateNewTitle()
+                song.changeTitle()
+                song.changeArtist()
+            # song.printSong()
             print(" %d of %d (%d percent)" %(self.ctr, self.masterList.__len__(), 100*self.ctr/self.masterList.__len__()))
 
 
 
 class SongFile:
-    title = "Tagging Error"
-    albumArtist = "Tagging Error"
-    album = "Tagging Error"
+
+    DEFAULT_TAGGING_NAME = "Tagging Error"
+
+    title = DEFAULT_TAGGING_NAME
+    albumArtist = DEFAULT_TAGGING_NAME
+    artist = DEFAULT_TAGGING_NAME
+    album = DEFAULT_TAGGING_NAME
     track = "-1"
-    path = "Tagging Error"
+    path = DEFAULT_TAGGING_NAME
     fileName = "Bad File"
     image = None
 
@@ -120,6 +130,10 @@ class SongFile:
             except:
                 print("*** AND " + song + " Artist Error")
         try:
+            self.artist = ''.join(metaData["artist"])
+        except:
+            print("***" + song + "Artist Error")
+        try:
             self.album = metaData["album"][0]
         except:
             print("***" + song + "Album Error")
@@ -144,9 +158,34 @@ class SongFile:
 
     def printSong(self):
         print("title : " + self.title
+              + "; artist : " + self.artist
               + "; albumArtist : " + self.albumArtist
               + "; album : " + self.album
               + "; track : " + self.track)
+
+    def artistChecking(self):
+        if self.artist != self.DEFAULT_TAGGING_NAME and self.artist != self.albumArtist:
+            return True
+
+    def generateNewTitle(self):
+        add = self.artist.replace(self.albumArtist + ', ', '')
+        self.title = self.title + ' (feat. ' + add + ')'
+
+    def changeTitle(self):
+        try:
+            audio = EasyID3(self.path)
+        except:
+            audio = FLAC(self.path)
+        audio['title'] = self.title
+        audio.save()
+
+    def changeArtist(self):
+        try:
+            audio = EasyID3(self.path)
+        except:
+            audio = FLAC(self.path)
+        audio['artist'] = self.albumArtist
+        audio.save()
 
 
 def main():
@@ -154,7 +193,7 @@ def main():
     path = input("What is the path to work with? ('q' for the directory of the python file): ")
     if path == 'q':
         path = dirname(abspath(__file__))
-    path = "D:\Music\Childish Gambino"
+    # path = 'D:\Music\Childish Gambino\Because The Internet (Album)'
     print("Searching " + path)
     l.setPath(l, path)
     l.makeMasterList(l, path)
