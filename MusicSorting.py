@@ -5,7 +5,7 @@ from PIL import Image
 from mutagen.easyid3 import EasyID3
 from mutagen.flac import FLAC
 from mutagen.id3 import ID3, APIC
-from shutil import copyfile
+from shutil import copyfile, move
 
 
 
@@ -16,10 +16,16 @@ class List:
     albumList = []
     artistList = []
     path = ""
+    choice = ""
+    toDoNewFolder = ""
     ctr = 0
 
     def setPath(self, path):
         self.path = path.replace("\\", "/")
+
+    def setSettings(self, c, n):
+        self.choice = c
+        self.toDoNewFolder = n
 
     def add(self, file, path):
         type = file[-4:].replace(".", "")
@@ -72,22 +78,38 @@ class List:
 
         return "".join(safe_char(c) for c in filename).rstrip("")
 
-    def copySongs(self):
+    def fixSongs(self):
         for song in self.masterList:
-            source = song.path.replace("\\", "/")
-            dest = self.path + "/" + "new" + "/" + self.legalize(song.albumArtist) + "/" + self.legalize(song.album) + "/" + song.fileName
-            # destImg = self.path + "/" + "new" + "/" + self.legalize(song.albumArtist) + "/" + self.legalize(song.album) + "/" + "folder.jpg"
-            # if not exists(dest):
-            #     copyfile(source, dest)
-            # if not exists(destImg):
-            #     song.image.save(destImg)
-            self.ctr += 1
             if song.artistChecking():
                 song.generateNewTitle()
                 song.changeTitle()
                 song.changeArtist()
+            self.ctr += 1
+            print(" %d of %d (%d percent)" %(self.ctr, self.masterList.__len__(), 100*self.ctr/self.masterList.__len__()))
+
+    def moveSongs(self):
+        for song in self.masterList:
+            source = song.path.replace("\\", "/")
+            dest = self.path + "/new/" + self.legalize(song.albumArtist) + "/" + self.legalize(song.album) + "/" + song.fileName
+            # destImg = self.path + "/" + "new" + "/" + self.legalize(song.albumArtist) + "/" + self.legalize(song.album) + "/" + "folder.jpg"
+            self.moveOrCopy(self, song, dest, source)
+            # if not exists(destImg):
+            #     song.image.save(destImg)
+            self.ctr += 1
             # song.printSong()
             print(" %d of %d (%d percent)" %(self.ctr, self.masterList.__len__(), 100*self.ctr/self.masterList.__len__()))
+
+    def editDirectory(self, s: str):
+        if self.toDoNewFolder == 'N':
+            return s.replace("/new/", "/")
+
+    def moveOrCopy(self, song, dest, source):
+        if self.choice == 1:
+            if not exists(dest):
+                move(source, dest)
+        else:
+            if not exists(dest):
+                copyfile(source, dest)
 
 
 
@@ -193,14 +215,32 @@ def main():
     path = input("What is the path to work with? ('q' for the directory of the python file): ")
     if path == 'q':
         path = dirname(abspath(__file__))
-    # path = 'D:\Music\Childish Gambino\Because The Internet (Album)'
+    path = 'D:\Music\Childish Gambino'
     print("Searching " + path)
     l.setPath(l, path)
     l.makeMasterList(l, path)
-    # l.printMasterList(l)
     l.makeAlbumList(l)
-    l.makeFolder(l)
-    l.copySongs(l)
+
+    toDo = input("What do you want to do?\n"
+                 + "1. Fix the songs and such\n"
+                 + "2. Move around the songs and such\n"
+                 + "Choice: ")
+
+    if toDo == '1':
+        l.fixSongs(l)
+
+    if toDo == '2':
+        choice = input("Which would you rather do?\n"
+                     + "1. Move the song to a new folder\n"
+                     + "2. Copy the song to a new folder\n"
+                     + "Choice: ")
+        toDoNewFolder = 'N'
+        if choice == '1':
+            toDoNewFolder = input("Would you like to make a new folder named 'new' for the songs "
+                                  + "(to preserve the old file structure)?: (y/n)")
+        l.setSettings(l, choice, toDoNewFolder.upper())
+        l.makeFolder(l)
+        l.moveSongs(l)
 
 
 if __name__ == '__main__':
